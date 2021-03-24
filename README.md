@@ -142,8 +142,100 @@ This will create Program.cs file with C# code for simple HellowWorld application
 ``` 
 6. Replace the code in *Program.cs* in directory *wd* with following code after you replace values of variables *configurationFilePath, profile ,ociStreamOcid and ociMessageEndpoint* in the follwing code snippet with values applicable for your tenancy. 
 ```C#
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+using Oci.Common.Auth;
+using Oci.Common.Waiters;
+using Oci.StreamingService;
+using Oci.StreamingService.Models;
+using Oci.StreamingService.Requests;
+using Oci.StreamingService.Responses;
 
+namespace OssProducer
+{
+    class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            Console.WriteLine("Starting example for OSS Producer");
+            string configurationFilePath = "C:\\.oci\\config";
+            string profile = "DEFAULT";
+            string ociStreamOcid = "ocid1.stream.oc1.ap-mumbai-1.amaaaaaauwpiejqaxcfc2ht67wwohfg7mxcstfkh2kp3hweeenb3zxtr5khq";
+            string ociMessageEndpoint = "https://cell-1.streaming.ap-mumbai-1.oci.oraclecloud.com";
 
+           try{
+                var provider = new ConfigFileAuthenticationDetailsProvider(configurationFilePath, profile);
+                
+                StreamClient streamClient = new StreamClient(provider);
+                streamClient.SetEndpoint(ociMessageEndpoint);
+
+                // A cursor can be created as part of a consumer group.
+                // Committed offsets are managed for the group, and partitions
+                // are dynamically balanced amongst consumers in the group.
+                Console.WriteLine("Starting a simple message loop with a group cursor");
+                string groupCursor = await GetCursorByGroup(streamClient, ociStreamOcid, "exampleGroup", "exampleInstance-1");
+                await SimpleMessageLoop(streamClient, ociStreamOcid, groupCursor);
+           }
+           catch (Exception e)
+            {
+                Console.WriteLine($"Streaming example failed: {e}");
+            }
+        }
+
+        private static async Task<string> GetCursorByGroup(StreamClient streamClient, string streamId, string groupName, string instanceName)
+        {
+            Console.WriteLine($"Creating a cursor for group {groupName}, instance {instanceName}");
+
+            CreateGroupCursorDetails createGroupCursorDetails = new CreateGroupCursorDetails
+            {
+                GroupName = groupName,
+                InstanceName = instanceName,
+                Type = CreateGroupCursorDetails.TypeEnum.TrimHorizon,
+                CommitOnGet = true
+            };
+            CreateGroupCursorRequest createCursorRequest = new CreateGroupCursorRequest
+            {
+                StreamId = streamId,
+                CreateGroupCursorDetails = createGroupCursorDetails
+            };
+            CreateGroupCursorResponse groupCursorResponse = await streamClient.CreateGroupCursor(createCursorRequest);
+
+            return groupCursorResponse.Cursor.Value;
+        }
+        private static async Task SimpleMessageLoop(StreamClient streamClient, string streamId, string initialCursor)
+        {
+            string cursor = initialCursor;
+            for (int i = 0; i < 10; i++)
+            {
+
+                GetMessagesRequest getMessagesRequest = new GetMessagesRequest
+                {
+                    StreamId = streamId,
+                    Cursor = cursor,
+                    Limit = 10
+                };
+                GetMessagesResponse getResponse = await streamClient.GetMessages(getMessagesRequest);
+
+                // process the messages
+                Console.WriteLine($"Read {getResponse.Items.Count}");
+                foreach (Message message in getResponse.Items)
+                {
+                    string key = message.Key != null ? Encoding.UTF8.GetString(message.Key) : "Null";     
+                    Console.WriteLine($"{key} : {Encoding.UTF8.GetString(message.Value)}");
+                }
+
+                // getMessages is a throttled method; clients should retrieve sufficiently large message
+                // batches, as to avoid too many http requests.
+                await Task.Delay(1000);
+
+                // use the next-cursor for iteration
+                cursor = getResponse.OpcNextCursor;
+            }
+        }
+    }
+}
 
 ```
 4. Run the code on the terminal(from the same directory *wd*) follows 
