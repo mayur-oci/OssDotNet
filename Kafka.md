@@ -95,13 +95,13 @@ namespace OssProducerWithKafkaApi
 }
 ```
 
-3.   Run the code on the terminal(from the same directory `wd`) follows 
+6.   Run the code on the terminal(from the same directory `wd`) follows 
 ```Shell
   $:/path/to/wd/directory>dotnet run
 ```
 This will put messages in your OSS stream.
 
-4. In the OCI Web Console, quickly go to your Stream Page and click on *Load Messages* button. You should see the messages we just produced as below.
+7. In the OCI Web Console, quickly go to your Stream Page and click on *Load Messages* button. You should see the messages we just produced as below.
 ![See Produced Messages in OCI Wb Console](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/StreamExampleLoadMessages.png?raw=true)
 
   
@@ -122,11 +122,11 @@ This will put messages in your OSS stream.
 ```
 This will create Program.cs file with C# code for simple HellowWorld application.
 
-4. To reference confluent-kafka-dotnet library in your just created .NET Core project, execute the following command in your project’s directory  `wd`.
+5. To reference confluent-kafka-dotnet library in your just created .NET Core project, execute the following command in your project’s directory  `wd`.
 ```Shell
   $:/path/to/wd/directory>dotnet add package Confluent.Kafka
 ``` 
-5.  Replace the code in  *Program.cs*  in directory  _wd_  with following code. You also need to replace after you replace values of config variables in the map`ProducerConfig`  and the name of  `topic`  is the name of stream you created. You should already have all the  `Kafka config info`  and topic name(stream name) from the step 2 of the  *Prerequisites*  section of this tutorial.
+6.  Replace the code in  *Program.cs*  in directory  _wd_  with following code. You also need to replace after you replace values of config variables in the map`ProducerConfig`  and the name of  `topic`  is the name of stream you created. You should already have all the  `Kafka config info`  and topic name(stream name) from the step 2 of the  *Prerequisites*  section of this tutorial.
 ```C#
 using System;
 using Confluent.Kafka;
@@ -192,12 +192,12 @@ namespace OssKafkaConsumerDotnet
 }
 
 ```
-4. Run the code on the terminal(from the same directory *wd*) follows 
+7. Run the code on the terminal(from the same directory *wd*) follows 
   Run the code on the terminal(from the same directory *wd*) follows 
 ```Shell
   $:/path/to/wd/directory>dotnet run
 ```
-5. You should see the messages similar to shown below. Note when we produce message from OCI Web Console(as described above in first step), the Key for each message is *Null*
+8. You should see the messages similar to shown below. Note when we produce message from OCI Web Console(as described above in first step), the Key for each message is *Null*
 ```
 $:/path/to/wd/directory>dotnet run
  [INFO related maven compiling and building the Java code]
