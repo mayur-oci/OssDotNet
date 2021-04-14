@@ -8,7 +8,7 @@ This quickstart shows how to produce messages to and consume messages from an [*
 ## Prerequisites
 
 1. You need have OCI account subscription or free account. typical links @jb
-2. Follow [these steps](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/CreateStream.md) to create Streampool and Stream in OCI. If you do  already have stream created, refer step 3 [here](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/CreateStream.md) to capture/record message endpoint and OCID of the stream. We need this Information for upcoming steps.
+2. Follow [these steps](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/CreateStream.md) to create Streampool and Stream in OCI. If you do  already have stream created, refer step 4 [here](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/CreateStream.md) to capture information related to `Kafka Connection Settings`. We need this Information for upcoming steps.
 3. The  [.NET 5.0 SDK or later](https://dotnet.microsoft.com/download). Make sure *dotnet* is in your *PATH* environment variable.
 4. VS code(recommended) with with the [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) installed. For information about how to install extensions on Visual Studio Code, see [VS Code Extension Marketplace](https://code.visualstudio.com/docs/editor/extension-gallery). In this tutorial we create and run a simple .NET console application by using Visual Studio Code and the .NET CLI,  as quick demonstration of how to use OCI .NET SDK for OSS. Project tasks, such as creating, compiling, and running a project are done by using the .NET CLI. You can follow this tutorial with a different IDE and run commands in a terminal if you prefer. 
 5. Authentication with the Kafka protocol uses auth-tokens and the SASL/PLAIN mechanism. Follow [Working with Auth Tokens](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/managingcredentials.htm#Working) for auth-token generation. 
@@ -17,8 +17,8 @@ Since you have created the stream(aka Kafka Topic) and Streampool in OCI, you ar
 
 
 ## Producing messages to OSS
-1. Open your favorite editor, such as [Visual Studio Code](https://code.visualstudio.com) from the empty working directory *wd*. 
-2. Open the terminal and *cd* into *wd* directory. 
+1. Open your favorite editor, such as [Visual Studio Code](https://code.visualstudio.com) from the empty working directory `wd`. 
+2. Open the terminal and `cd` into `wd` directory. 
 3. Create C# .NET console application by running the following command on the terminal
 ```Shell
   $:/path/to/wd/directory>dotnet new console
@@ -26,94 +26,75 @@ Since you have created the stream(aka Kafka Topic) and Streampool in OCI, you ar
 ```
 This will create Program.cs file with C# code for simple HellowWorld application.
 
-4. Add OCI SDK packages for basic IAM authentication and OSS to your C# project as follows.
+4. To reference confluent-kafka-dotnet library in your just created .NET Core project, execute the following command in your project’s directory `wd`
 ```Shell
-  $:/path/to/wd/directory>dotnet add package OCI.DotNetSDK.Common
-  $:/path/to/wd/directory>dotnet add package OCI.DotNetSDK.Streaming
+  $:/path/to/wd/directory>dotnet add package Confluent.Kafka
 ``` 
-6. Replace the code in *Program.cs* in directory *wd* with following code after you replace values of variables *configurationFilePath, profile ,ociStreamOcid and ociMessageEndpoint* in the follwing code snippet with values applicable for your tenancy. 
+5. Replace the code in *Program.cs* in directory *wd* with following code.
+You also need to replace after you replace values of config variables in the map`ProducerConfig` and the name of `topic` is the name of stream you created. You should already have all the `Kafka config info` and topic name(stream name) from the step 2 of the *Prerequisites* section of this tutorial. 
 ```C#
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Oci.Common.Auth;
-using Oci.Common.Waiters;
-using Oci.StreamingService;
-using Oci.StreamingService.Models;
-using Oci.StreamingService.Requests;
-using Oci.StreamingService.Responses;
+using Confluent.Kafka;
 
-namespace OssProducer
+namespace OssProducerWithKafkaApi
 {
     class Program
     {
-        public static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Starting example for OSS Producer");
-            string configurationFilePath = "C:\\.oci\\config";
-            string profile = "DEFAULT";
-            string ociStreamOcid = "ocid1.stream.oc1.ap-mumbai-1.amaaaaaauwpiejqaxcfc2ht67wwohfg7mxcstfkh2kp3hweeenb3zxtr5khq";
-            string ociMessageEndpoint = "https://cell-1.streaming.ap-mumbai-1.oci.oraclecloud.com";
+            Console.WriteLine("Demo for using Kafka APIs seamlessly with OSS");
 
-           try{
-                var provider = new ConfigFileAuthenticationDetailsProvider(configurationFilePath, profile);
-                
-                StreamClient streamClient = new StreamClient(provider);
-                streamClient.SetEndpoint(ociMessageEndpoint);
+            var config = new ProducerConfig {
+                            BootstrapServers = "[end point of the bootstrap servers]", //
+                            SslCaLocation = "path\to\root\ca\certificate\*.pem",
+                            SecurityProtocol = SecurityProtocol.SaslSsl,
+                            SaslMechanism = SaslMechanism.Plain,
+                            SaslUsername = "[OCI_TENANCY_NAME]/[YOUR_OCI_USERNAME]/[OCID_FOR_STREAMPOOL_YOU_CREATED]",
+                            SaslPassword = "[Your OCI User Auth-Token]", // use the auth-token you created step 5 of Prerequisites section 
+                            };
 
-                await PublishExampleMessages(streamClient, ociStreamOcid);
-           }
-           catch (Exception e)
-            {
-                Console.WriteLine($"Streaming example failed: {e}");
-            }
+            Produce("topicName", config); // use the name of the stream you created
+
         }
 
-        private static async Task PublishExampleMessages(StreamClient streamClient, string streamId)
+        static void Produce(string topic, ClientConfig config)
         {
-            // build up a putRequest and publish some messages to the stream
-            List<PutMessagesDetailsEntry> messages = new List<PutMessagesDetailsEntry>();
-            for (int i = 0; i < 100; i++)
+            using (var producer = new ProducerBuilder<string, string>(config).Build())
             {
-                PutMessagesDetailsEntry detailsEntry = new PutMessagesDetailsEntry
+                int numProduced = 0;
+                int numMessages = 10;
+                for (int i=0; i<numMessages; ++i)
                 {
-                    Key = Encoding.UTF8.GetBytes($"messagekey-{i}"),
-                    Value = Encoding.UTF8.GetBytes($"messageValue-{i}")
-                };
-                messages.Add(detailsEntry);
-            }
+                    var key = "messageKey" + i;
+                    var val = "messageVal" + i;
 
-            Console.WriteLine($"Publishing {messages.Count} messages to stream {streamId}");
-            PutMessagesDetails messagesDetails = new PutMessagesDetails
-            {
-                Messages = messages
-            };
-            PutMessagesRequest putRequest = new PutMessagesRequest
-            {
-                StreamId = streamId,
-                PutMessagesDetails = messagesDetails
-            };
-            PutMessagesResponse putResponse = await streamClient.PutMessages(putRequest);
+                    Console.WriteLine($"Producing record: {key} {val}");
 
-            // the putResponse can contain some useful metadata for handling failures
-            foreach (PutMessagesResultEntry entry in putResponse.PutMessagesResult.Entries)
-            {
-                if (entry.Error != null)
-                {
-                    Console.WriteLine($"Error({entry.Error}): {entry.ErrorMessage}");
+                    producer.Produce(topic, new Message<string, string> { Key = key, Value = val },
+                        (deliveryReport) =>
+                        {
+                            if (deliveryReport.Error.Code != ErrorCode.NoError)
+                            {
+                                Console.WriteLine($"Failed to deliver message: {deliveryReport.Error.Reason}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Produced message to: {deliveryReport.TopicPartitionOffset}");
+                                numProduced += 1;
+                            }
+                        });
                 }
-                else
-                {
-                    Console.WriteLine($"Published message to partition {entry.Partition}, offset {entry.Offset}");
-                }
+
+                producer.Flush(TimeSpan.FromSeconds(10));
+
+                Console.WriteLine($"{numProduced} messages were produced to topic {topic}");
             }
         }
     }
 }
-
 ```
-3.   Run the code on the terminal(from the same directory *wd*) follows 
+
+3.   Run the code on the terminal(from the same directory `wd`) follows 
 ```Shell
   $:/path/to/wd/directory>dotnet run
 ```
