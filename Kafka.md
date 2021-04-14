@@ -3,7 +3,8 @@
 
 # Quickstart with Kafka .NET Client for OSS
 
-This quickstart shows how to produce messages to and consume messages from an [**Oracle Streaming Service**](https://docs.oracle.com/en-us/iaas/Content/Streaming/Concepts/streamingoverview.htm) using the [Kafka .NET  Client](https://docs.confluent.io/clients-confluent-kafka-dotnet/current/overview.html). Since OSS is API compatible with Apache Kafka. Hence developers who are already familiar with Kafka, do not need to make Kafka client code, except for config values like endpoint for Kafka brokers and some credentials etc.  We are going to use C# language for these examples. 
+This quickstart shows how to produce messages to and consume messages from an [**Oracle Streaming Service**](https://docs.oracle.com/en-us/iaas/Content/Streaming/Concepts/streamingoverview.htm) using the [Kafka .NET  Client](https://docs.confluent.io/clients-confluent-kafka-dotnet/current/overview.html). We are going to use C# language for these examples.
+Please note, OSS is API compatible with Apache Kafka. Hence developers who are already familiar with Kafka need to make only few minimal changes to their Kafka client code, like config values like endpoint for Kafka brokers!  
 
 ## Prerequisites
 
@@ -45,7 +46,7 @@ namespace OssProducerWithKafkaApi
             Console.WriteLine("Demo for using Kafka APIs seamlessly with OSS");
 
             var config = new ProducerConfig {
-                            BootstrapServers = "[end point of the bootstrap servers]", //
+                            BootstrapServers = "[end point of the bootstrap servers]", //usually of the form cell-1.streaming.[region code].oci.oraclecloud.com:9092
                             SslCaLocation = "path\to\root\ca\certificate\*.pem",
                             SecurityProtocol = SecurityProtocol.SaslSsl,
                             SaslMechanism = SaslMechanism.Plain,
