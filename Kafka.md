@@ -105,7 +105,7 @@ This will put messages in your OSS stream.
 
   
 ## Consuming messages from OSS
-1. First produce messages to the stream you want to consumer message from unless you already have messages in the stream. You can produce message easily from *OCI Web Console* using simple *Produce Test Message* button as shown below
+1. First produce messages to the stream you want to consume messages from unless you already have messages in the stream. You can produce message easily from *OCI Web Console* using simple *Produce Test Message* button as shown below
 ![Produce Test Message Button](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/ProduceButton.png?raw=true)
  
  You can produce multiple test messages by clicking *Produce* button back to back, as shown below
@@ -113,7 +113,7 @@ This will put messages in your OSS stream.
 
 
 2. Open your favorite editor, such as [Visual Studio Code](https://code.visualstudio.com) from the empty working directory *wd*. 
-3. Open the terminal and *cd* into *wd* directory. 
+3. Open the terminal and *cd* into `wd` directory. 
 4. Create C# .NET console application by running the following command on the terminal
 ```Shell
   $:/path/to/wd/directory>dotnet new console
@@ -121,105 +121,72 @@ This will put messages in your OSS stream.
 ```
 This will create Program.cs file with C# code for simple HellowWorld application.
 
-4. Add OCI SDK packages for basic IAM authentication and OSS to your C# project as follows.
+4. To reference confluent-kafka-dotnet library in your just created .NET Core project, execute the following command in your project’s directory  `wd`.
 ```Shell
-  $:/path/to/wd/directory>dotnet add package OCI.DotNetSDK.Common
-  $:/path/to/wd/directory>dotnet add package OCI.DotNetSDK.Streaming
+  $:/path/to/wd/directory>dotnet add package Confluent.Kafka
 ``` 
-6. Replace the code in *Program.cs* in directory *wd* with following code after you replace values of variables *configurationFilePath, profile ,ociStreamOcid and ociMessageEndpoint* in the follwing code snippet with values applicable for your tenancy. 
+5.  Replace the code in  *Program.cs*  in directory  _wd_  with following code. You also need to replace after you replace values of config variables in the map`ProducerConfig`  and the name of  `topic`  is the name of stream you created. You should already have all the  `Kafka config info`  and topic name(stream name) from the step 2 of the  *Prerequisites*  section of this tutorial.
 ```C#
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Oci.Common.Auth;
-using Oci.Common.Waiters;
-using Oci.StreamingService;
-using Oci.StreamingService.Models;
-using Oci.StreamingService.Requests;
-using Oci.StreamingService.Responses;
+using Confluent.Kafka;
+using System.Threading;
 
-namespace OssProducer
+namespace OssKafkaConsumerDotnet
 {
     class Program
     {
-        public static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Starting example for OSS Producer");
-            string configurationFilePath = "C:\\.oci\\config";
-            string profile = "DEFAULT";
-            string ociStreamOcid = "ocid1.stream.oc1.ap-mumbai-1.amaaaaaauwpiejqaxcfc2ht67wwohfg7mxcstfkh2kp3hweeenb3zxtr5khq";
-            string ociMessageEndpoint = "https://cell-1.streaming.ap-mumbai-1.oci.oraclecloud.com";
+            Console.WriteLine("Demo for using Kafka APIs seamlessly with OSS");
 
-           try{
-                var provider = new ConfigFileAuthenticationDetailsProvider(configurationFilePath, profile);
-                
-                StreamClient streamClient = new StreamClient(provider);
-                streamClient.SetEndpoint(ociMessageEndpoint);
+            new ProducerConfig {
+                            BootstrapServers = "[end point of the bootstrap servers]", //usually of the form cell-1.streaming.[region code].oci.oraclecloud.com:9092
+                            SslCaLocation = "path\to\root\ca\certificate\*.pem",
+                            SecurityProtocol = SecurityProtocol.SaslSsl,
+                            SaslMechanism = SaslMechanism.Plain,
+                            SaslUsername = "               [OCI_TENANCY_NAME]/[YOUR_OCI_USERNAME]/[OCID_FOR_STREAMPOOL_YOU_CREATED]",
+                            SaslPassword = "[Your OCI User Auth-Token]", // use the auth-token you created step 5 of Prerequisites section 
+                            };
 
-                // A cursor can be created as part of a consumer group.
-                // Committed offsets are managed for the group, and partitions
-                // are dynamically balanced amongst consumers in the group.
-                Console.WriteLine("Starting a simple message loop with a group cursor");
-                string groupCursor = await GetCursorByGroup(streamClient, ociStreamOcid, "exampleGroup", "exampleInstance-1");
-                await SimpleMessageLoop(streamClient, ociStreamOcid, groupCursor);
-           }
-           catch (Exception e)
-            {
-                Console.WriteLine($"Streaming example failed: {e}");
-            }
+            Consume("[YOUR_STREAM_NAME]", config); // use the name of the stream you created
         }
-
-        private static async Task<string> GetCursorByGroup(StreamClient streamClient, string streamId, string groupName, string instanceName)
+        static void Consume(string topic, ClientConfig config)
         {
-            Console.WriteLine($"Creating a cursor for group {groupName}, instance {instanceName}");
+            var consumerConfig = new ConsumerConfig(config);
+            consumerConfig.GroupId = "dotnet-oss-consumer-group";
+            consumerConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+            consumerConfig.EnableAutoCommit = true;
 
-            CreateGroupCursorDetails createGroupCursorDetails = new CreateGroupCursorDetails
-            {
-                GroupName = groupName,
-                InstanceName = instanceName,
-                Type = CreateGroupCursorDetails.TypeEnum.TrimHorizon,
-                CommitOnGet = true
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
             };
-            CreateGroupCursorRequest createCursorRequest = new CreateGroupCursorRequest
+
+            using (var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build())
             {
-                StreamId = streamId,
-                CreateGroupCursorDetails = createGroupCursorDetails
-            };
-            CreateGroupCursorResponse groupCursorResponse = await streamClient.CreateGroupCursor(createCursorRequest);
-
-            return groupCursorResponse.Cursor.Value;
-        }
-        private static async Task SimpleMessageLoop(StreamClient streamClient, string streamId, string initialCursor)
-        {
-            string cursor = initialCursor;
-            for (int i = 0; i < 10; i++)
-            {
-
-                GetMessagesRequest getMessagesRequest = new GetMessagesRequest
+                consumer.Subscribe(topic);
+                try
                 {
-                    StreamId = streamId,
-                    Cursor = cursor,
-                    Limit = 10
-                };
-                GetMessagesResponse getResponse = await streamClient.GetMessages(getMessagesRequest);
-
-                // process the messages
-                Console.WriteLine($"Read {getResponse.Items.Count}");
-                foreach (Message message in getResponse.Items)
-                {
-                    string key = message.Key != null ? Encoding.UTF8.GetString(message.Key) : "Null";     
-                    Console.WriteLine($"{key} : {Encoding.UTF8.GetString(message.Value)}");
+                    while (true)
+                    {
+                        var cr = consumer.Consume(cts.Token);
+                        string key = cr.Message.Key == null ? "Null" : cr.Message.Key;
+                        Console.WriteLine($"Consumed record with key {key} and value {cr.Message.Value}");
+                    }
                 }
-
-                // getMessages is a throttled method; clients should retrieve sufficiently large message
-                // batches, as to avoid too many http requests.
-                await Task.Delay(1000);
-
-                // use the next-cursor for iteration
-                cursor = getResponse.OpcNextCursor;
+                catch (OperationCanceledException)
+                {
+                    //exception might have occurred since Ctrl-C was pressed.
+                }
+                finally
+                {
+                    // Ensure the consumer leaves the group cleanly and final offsets are committed.
+                    consumer.Close();
+                }
             }
         }
+
     }
 }
 
