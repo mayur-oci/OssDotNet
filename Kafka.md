@@ -100,6 +100,7 @@ namespace OssProducerWithKafkaApi
   $:/path/to/wd/directory>dotnet run
 ```
 This will put messages in your OSS stream.
+
 4. In the OCI Web Console, quickly go to your Stream Page and click on *Load Messages* button. You should see the messages we just produced as below.
 ![See Produced Messages in OCI Wb Console](https://github.com/mayur-oci/OssJs/blob/main/JavaScript/StreamExampleLoadMessages.png?raw=true)
 
