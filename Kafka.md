@@ -200,17 +200,10 @@ namespace OssKafkaConsumerDotnet
 8. You should see the messages similar to shown below. Note when we produce message from OCI Web Console(as described above in first step), the Key for each message is *Null*
 ```
 $:/path/to/wd/directory>dotnet run
-Read 25 messages.
-Null: Example Test Message 0
-Null: Example Test Message 0
- Read 2 messages
-Null: Example Test Message 0
-Null: Example Test Message 0
- Read 1 messages
-Null: Example Test Message 0
- Read 10 messages
-key 0: value 0
-key 1: value 1
+Demo for using Kafka APIs seamlessly with OSS
+Consumed record with key messageKey0 and value messageValue0
+Consumed record with key messageKey1 and value messageValue1
+Consumed record with key Null and value Example test message
 
 ```
 
