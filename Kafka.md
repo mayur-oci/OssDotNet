@@ -140,7 +140,7 @@ namespace OssKafkaConsumerDotnet
         {
             Console.WriteLine("Demo for using Kafka APIs seamlessly with OSS");
 
-            new ConsumerConfig {
+            var config = new ConsumerConfig {
                             BootstrapServers = "[end point of the bootstrap servers]", //usually of the form cell-1.streaming.[region code].oci.oraclecloud.com:9092
                             SslCaLocation = "path\to\root\ca\certificate\*.pem",
                             SecurityProtocol = SecurityProtocol.SaslSsl,
