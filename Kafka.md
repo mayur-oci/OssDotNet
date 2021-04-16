@@ -200,9 +200,6 @@ namespace OssKafkaConsumerDotnet
 8. You should see the messages similar to shown below. Note when we produce message from OCI Web Console(as described above in first step), the Key for each message is *Null*
 ```
 $:/path/to/wd/directory>dotnet run
- [INFO related maven compiling and building the Java code]
-Starting a simple message loop with a group cursor
-Creating a cursor for group exampleGroup, instance exampleInstance-1.
 Read 25 messages.
 Null: Example Test Message 0
 Null: Example Test Message 0
