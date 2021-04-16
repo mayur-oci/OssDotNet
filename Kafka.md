@@ -145,7 +145,7 @@ namespace OssKafkaConsumerDotnet
                             SslCaLocation = "path\to\root\ca\certificate\*.pem",
                             SecurityProtocol = SecurityProtocol.SaslSsl,
                             SaslMechanism = SaslMechanism.Plain,
-                            SaslUsername = "               [OCI_TENANCY_NAME]/[YOUR_OCI_USERNAME]/[OCID_FOR_STREAMPOOL_YOU_CREATED]",
+                            SaslUsername = "[OCI_TENANCY_NAME]/[YOUR_OCI_USERNAME]/[OCID_FOR_STREAMPOOL_YOU_CREATED]",
                             SaslPassword = "[Your OCI User Auth-Token]", // use the auth-token you created step 5 of Prerequisites section 
                             };
 
