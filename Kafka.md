@@ -126,7 +126,7 @@ This will create Program.cs file with C# code for simple HellowWorld application
 ```Shell
   $:/path/to/wd/directory>dotnet add package Confluent.Kafka
 ``` 
-6.  Replace the code in  *Program.cs*  in directory  _wd_  with following code. You also need to replace after you replace values of config variables in the map`ProducerConfig`  and the name of  `topic`  is the name of stream you created. You should already have all the  `Kafka config info`  and topic name(stream name) from the step 2 of the  *Prerequisites*  section of this tutorial.
+6.  Replace the code in  *Program.cs*  in directory  _wd_  with following code. You also need to replace after you replace values of config variables in the map`ConsumerConfig`  and the name of  `topic`  is the name of stream you created. You should already have all the  `Kafka config info`  and topic name(stream name) from the step 2 of the  *Prerequisites*  section of this tutorial.
 ```C#
 using System;
 using Confluent.Kafka;
@@ -140,7 +140,7 @@ namespace OssKafkaConsumerDotnet
         {
             Console.WriteLine("Demo for using Kafka APIs seamlessly with OSS");
 
-            new ProducerConfig {
+            new ConsumerConfig {
                             BootstrapServers = "[end point of the bootstrap servers]", //usually of the form cell-1.streaming.[region code].oci.oraclecloud.com:9092
                             SslCaLocation = "path\to\root\ca\certificate\*.pem",
                             SecurityProtocol = SecurityProtocol.SaslSsl,
